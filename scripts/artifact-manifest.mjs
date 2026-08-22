@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
+import { identifiesBundledLibplacebo } from './runtime-manifest.mjs';
 
 const [platform, architecture] = process.argv.slice(2).filter(argument => argument !== '--');
 const expectedExtensions = {
@@ -72,7 +73,7 @@ try {
   if (platform === 'win' || platform === 'mac') {
     const runtimeManifest = await readFile(new URL('../dist/ffmpeg/RUNTIME_COMPONENTS.txt', import.meta.url));
     ffmpegRuntimeManifestSha256 = createHash('sha256').update(runtimeManifest).digest('hex');
-    bundledFfmpegLibplacebo = /(?:^|\s)libplacebo(?:\s|$)/im.test(runtimeManifest.toString('utf8'));
+    bundledFfmpegLibplacebo = identifiesBundledLibplacebo(platform, runtimeManifest.toString('utf8'));
   }
 } catch {
   // Report the required bundle below with a clear release-time error.
