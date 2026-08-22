@@ -5,7 +5,7 @@ import { basename } from 'node:path';
 const [platform, architecture] = process.argv.slice(2).filter(argument => argument !== '--');
 const expectedExtensions = {
   mac: ['.dmg'],
-  win: ['.exe'],
+  win: ['.exe', '.zip'],
   linux: ['.AppImage', '.deb', '.tar.gz']
 };
 const architectureAliases = {
@@ -56,6 +56,8 @@ const installedElectron = JSON.parse(await readFile(new URL('../node_modules/ele
 const installedElectronBuilder = JSON.parse(await readFile(new URL('../node_modules/electron-builder/package.json', import.meta.url), 'utf8'));
 let bundledFfmpeg = false;
 let bundledFfmpegVersion;
+let bundledFfmpegSource;
+let bundledFfmpegSourceSha256;
 let ffmpegRuntimeManifestSha256;
 let bundledFfmpegLibplacebo = false;
 try {
@@ -64,6 +66,9 @@ try {
     && ffmpegEntries.some(name => name === 'ffprobe' || name === 'ffprobe.exe');
   const versionOutput = await readFile(new URL('../dist/ffmpeg/FFMPEG_VERSION.txt', import.meta.url), 'utf8');
   bundledFfmpegVersion = versionOutput.match(/^ffmpeg version\s+(\S+)/i)?.[1];
+  const buildInfo = await readFile(new URL('../dist/ffmpeg/BUILD_INFO.txt', import.meta.url), 'utf8');
+  bundledFfmpegSource = buildInfo.match(/^Source:\s*(\S+)\s*$/im)?.[1];
+  bundledFfmpegSourceSha256 = buildInfo.match(/^Source SHA-256:\s*([a-f0-9]{64})\s*$/im)?.[1];
   if (platform === 'win' || platform === 'mac') {
     const runtimeManifest = await readFile(new URL('../dist/ffmpeg/RUNTIME_COMPONENTS.txt', import.meta.url));
     ffmpegRuntimeManifestSha256 = createHash('sha256').update(runtimeManifest).digest('hex');
@@ -74,6 +79,10 @@ try {
 }
 if (!bundledFfmpeg) {
   console.error(`The ${platform}/${architecture} package does not contain the required FFmpeg and FFprobe bundle.`);
+  process.exit(1);
+}
+if (!bundledFfmpegSource || !bundledFfmpegSourceSha256) {
+  console.error(`The ${platform}/${architecture} package does not identify its bundled FFmpeg source.`);
   process.exit(1);
 }
 if ((platform === 'win' || platform === 'mac') && !bundledFfmpegLibplacebo) {
@@ -91,6 +100,8 @@ const metadata = {
   commit: process.env.GITHUB_SHA || null,
   bundledFfmpeg,
   bundledFfmpegVersion,
+  bundledFfmpegSource,
+  bundledFfmpegSourceSha256,
   bundledFfmpegLibplacebo,
   ffmpegRuntimeManifestSha256,
   lockfileSha256: createHash('sha256').update(lockfile).digest('hex'),

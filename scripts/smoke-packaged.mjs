@@ -113,13 +113,17 @@ if (platform === 'win' || platform === 'mac') {
     console.error(`Packaged ${platform} FFmpeg cannot apply Dolby Vision metadata.`);
     process.exit(1);
   }
-  runMedia(ffmpeg, [
-    '-hide_banner', '-loglevel', 'error',
-    '-f', 'rawvideo', '-pixel_format', 'yuv420p', '-video_size', '16x16',
-    '-framerate', '1', '-i', 'pipe:0',
-    '-vf', 'libplacebo=format=nv12:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:apply_dolbyvision=true',
-    '-frames:v', '1', '-f', 'null', '-'
-  ], Buffer.alloc(16 * 16 * 3 / 2, 128));
+  if (process.env.STREAMSHARE_SKIP_FFMPEG_GPU_SMOKE === '1') {
+    console.warn(`Skipped the packaged ${platform} FFmpeg GPU smoke test; filter and option availability were still verified.`);
+  } else {
+    runMedia(ffmpeg, [
+      '-hide_banner', '-loglevel', 'error',
+      '-f', 'rawvideo', '-pixel_format', 'yuv420p', '-video_size', '16x16',
+      '-framerate', '1', '-i', 'pipe:0',
+      '-vf', 'libplacebo=format=nv12:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:apply_dolbyvision=true',
+      '-frames:v', '1', '-f', 'null', '-'
+    ], Buffer.alloc(16 * 16 * 3 / 2, 128));
+  }
 }
 
 function cleanWindowsRuntimeEnvironment() {

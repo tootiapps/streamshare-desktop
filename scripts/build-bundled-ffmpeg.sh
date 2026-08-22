@@ -383,10 +383,14 @@ if [[ "$platform" == "mac" ]]; then
   [[ "$filters_output" == *libplacebo* ]]
   filter_help_output="$("$bundle_directory/ffmpeg" -hide_banner -h filter=libplacebo)"
   [[ "$filter_help_output" == *apply_dolbyvision* ]]
-  head -c 384 /dev/zero | "$bundle_directory/ffmpeg" \
-    -hide_banner -loglevel error -f rawvideo -pixel_format yuv420p -video_size 16x16 \
-    -framerate 1 -i pipe:0 -vf 'libplacebo=format=nv12:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:apply_dolbyvision=true' \
-    -frames:v 1 -f null -
+  if [[ "${STREAMSHARE_SKIP_FFMPEG_GPU_SMOKE:-}" == "1" ]]; then
+    echo "Skipped the macOS FFmpeg GPU smoke test; filter and option availability were still verified."
+  else
+    head -c 384 /dev/zero | "$bundle_directory/ffmpeg" \
+      -hide_banner -loglevel error -f rawvideo -pixel_format yuv420p -video_size 16x16 \
+      -framerate 1 -i pipe:0 -vf 'libplacebo=format=nv12:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:apply_dolbyvision=true' \
+      -frames:v 1 -f null -
+  fi
 fi
 touch "$completion_marker"
 

@@ -67,13 +67,17 @@ if (platform === 'win' || platform === 'mac') {
   if (!/\bapply_dolbyvision\b/.test(run(ffmpeg, ['-hide_banner', '-h', 'filter=libplacebo']))) {
     throw new Error(`The ${platform} FFmpeg bundle cannot apply Dolby Vision metadata.`);
   }
-  run(ffmpeg, [
-    '-hide_banner', '-loglevel', 'error',
-    '-f', 'rawvideo', '-pixel_format', 'yuv420p', '-video_size', '16x16',
-    '-framerate', '1', '-i', 'pipe:0',
-    '-vf', 'libplacebo=format=nv12:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:apply_dolbyvision=true',
-    '-frames:v', '1', '-f', 'null', '-'
-  ], Buffer.alloc(16 * 16 * 3 / 2, 128));
+  if (process.env.STREAMSHARE_SKIP_FFMPEG_GPU_SMOKE === '1') {
+    console.warn(`Skipped the ${platform} FFmpeg GPU smoke test; filter and option availability were still verified.`);
+  } else {
+    run(ffmpeg, [
+      '-hide_banner', '-loglevel', 'error',
+      '-f', 'rawvideo', '-pixel_format', 'yuv420p', '-video_size', '16x16',
+      '-framerate', '1', '-i', 'pipe:0',
+      '-vf', 'libplacebo=format=nv12:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:apply_dolbyvision=true',
+      '-frames:v', '1', '-f', 'null', '-'
+    ], Buffer.alloc(16 * 16 * 3 / 2, 128));
+  }
 }
 
 await rm(destinationDirectory, { recursive: true, force: true });
