@@ -1,0 +1,102 @@
+{
+  "name": "@streamshare/tv-client",
+  "version": "0.1.0",
+  "description": "Open source Streamshare remote playback receiver for Windows, macOS and Linux",
+  "author": {
+    "name": "TootiApps",
+    "email": "tootiapps@gmail.com"
+  },
+  "homepage": "https://tootiapps.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tootiapps/streamshare-desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tootiapps/streamshare-desktop/issues"
+  },
+  "private": true,
+  "license": "Apache-2.0",
+  "main": "dist/main.cjs",
+  "desktopName": "streamshare-tv-client.desktop",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && node scripts/build.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "ffmpeg:build:host": "node scripts/build-host-ffmpeg.mjs",
+    "start": "pnpm build && node scripts/prepare-host-ffmpeg.mjs && electron .",
+    "start:debug": "pnpm build && node scripts/prepare-host-ffmpeg.mjs && node scripts/start-debug.mjs",
+    "dist": "pnpm run dist:host",
+    "dist:host": "pnpm build && node scripts/stage-ffmpeg.mjs && electron-builder --publish never",
+    "dist:mac": "pnpm run dist:mac:arm64",
+    "dist:mac:arm64": "pnpm build && node scripts/stage-ffmpeg.mjs mac arm64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64 --publish never -c.mac.identity=-",
+    "dist:mac:x64": "pnpm build && node scripts/stage-ffmpeg.mjs mac x64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --x64 --publish never -c.mac.identity=-",
+    "dist:win": "pnpm run dist:win:x64",
+    "dist:win:x64": "pnpm build && node scripts/stage-ffmpeg.mjs win x64 && electron-builder --win nsis --x64 --publish never",
+    "dist:win:arm64": "pnpm build && node scripts/stage-ffmpeg.mjs win x64 && electron-builder --win nsis --arm64 --publish never",
+    "dist:linux": "pnpm run dist:linux:x64",
+    "dist:linux:x64": "pnpm build && node scripts/stage-ffmpeg.mjs linux x64 && electron-builder --linux AppImage deb tar.gz --x64 --publish never",
+    "dist:linux:arm64": "pnpm build && node scripts/stage-ffmpeg.mjs linux arm64 && electron-builder --linux AppImage deb tar.gz --arm64 --publish never",
+    "dist:signed:mac:arm64": "node scripts/assert-signing-env.mjs mac && pnpm build && node scripts/stage-ffmpeg.mjs mac arm64 && electron-builder --mac dmg --arm64 --publish never -c.forceCodeSigning=true -c.mac.notarize=true",
+    "dist:signed:mac:x64": "node scripts/assert-signing-env.mjs mac && pnpm build && node scripts/stage-ffmpeg.mjs mac x64 && electron-builder --mac dmg --x64 --publish never -c.forceCodeSigning=true -c.mac.notarize=true",
+    "dist:signed:win:x64": "node scripts/assert-signing-env.mjs win && pnpm build && node scripts/stage-ffmpeg.mjs win x64 && electron-builder --win nsis --x64 --publish never -c.forceCodeSigning=true",
+    "artifacts:manifest": "node scripts/artifact-manifest.mjs",
+    "smoke:packaged": "node scripts/smoke-packaged.mjs",
+    "audit:public": "node scripts/check-public-boundary.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@streamshare/remote-protocol": "^1.0.0",
+    "bonjour-service": "^1.3.0",
+    "hls.js": "^1.6.16",
+    "node-forge": "^1.3.1",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/node-forge": "^1.3.14",
+    "@types/ws": "^8.18.1",
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.20",
+    "esbuild": "^0.28.0",
+    "typescript": "~5.9.3"
+  },
+  "build": {
+    "appId": "io.streamshare.tv",
+    "productName": "Streamshare TV Client",
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "Streamshare-TV-Client-${version}-${os}-${arch}.${ext}",
+    "files": [
+      "dist/**/*",
+      "!dist/**/*.map",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "dist/ffmpeg/**/*"
+    ],
+    "mac": {
+      "icon": "dist/icons/macos/icon.png",
+      "category": "public.app-category.entertainment"
+    },
+    "win": {
+      "icon": "dist/icons/windows/icon.ico",
+      "target": "nsis"
+    },
+    "linux": {
+      "icon": "dist/icons/linux",
+      "executableName": "streamshare-tv-client",
+      "syncDesktopName": true,
+      "synopsis": "Streamshare TV remote playback client",
+      "target": [
+        "AppImage",
+        "deb",
+        "tar.gz"
+      ],
+      "category": "AudioVideo"
+    }
+  },
+  "packageManager": "pnpm@11.9.0"
+}

@@ -1,0 +1,7 @@
+allowBuilds:
+  electron-winstaller: true
+  esbuild: true
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@streamshare/remote-protocol@1.0.0'
