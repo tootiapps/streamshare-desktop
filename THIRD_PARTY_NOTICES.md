@@ -4,10 +4,11 @@ Runtime dependencies used directly by StreamShare TV Client:
 
 | Component | Resolved version | License selected for distribution |
 | --- | ---: | --- |
-| Electron | 42.7.0 | MIT |
-| hls.js | 1.6.16 | Apache-2.0 |
-| ws | 8.20.1 | MIT |
-| bonjour-service | 1.4.0 | MIT |
+| @streamshare/remote-protocol | 1.0.0 | Apache-2.0 |
+| Electron | 42.9.3 | MIT |
+| hls.js | 1.7.1 | Apache-2.0 |
+| ws | 8.21.3 | MIT |
+| bonjour-service | 1.4.4 | MIT |
 | node-forge | 1.4.0 | BSD-3-Clause option |
 
 `hls.js` includes work Copyright (c) 2017 Dailymotion and portions derived from

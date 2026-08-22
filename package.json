@@ -22,6 +22,7 @@
   "scripts": {
     "build": "tsc --noEmit && node scripts/build.mjs",
     "test": "node scripts/run-tests.mjs",
+    "release:set-version": "node scripts/set-release-version.mjs",
     "ffmpeg:build:host": "node scripts/build-host-ffmpeg.mjs",
     "start": "pnpm build && node scripts/prepare-host-ffmpeg.mjs && electron .",
     "start:debug": "pnpm build && node scripts/prepare-host-ffmpeg.mjs && node scripts/start-debug.mjs",
@@ -31,8 +32,8 @@
     "dist:mac:arm64": "pnpm build && node scripts/stage-ffmpeg.mjs mac arm64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64 --publish never -c.mac.identity=-",
     "dist:mac:x64": "pnpm build && node scripts/stage-ffmpeg.mjs mac x64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --x64 --publish never -c.mac.identity=-",
     "dist:win": "pnpm run dist:win:x64",
-    "dist:win:x64": "pnpm build && node scripts/stage-ffmpeg.mjs win x64 && electron-builder --win nsis --x64 --publish never",
-    "dist:win:arm64": "pnpm build && node scripts/stage-ffmpeg.mjs win x64 && electron-builder --win nsis --arm64 --publish never",
+    "dist:win:x64": "pnpm build && node scripts/stage-ffmpeg.mjs win x64 && electron-builder --win nsis zip --x64 --publish never",
+    "dist:win:arm64": "pnpm build && node scripts/stage-ffmpeg.mjs win x64 && electron-builder --win nsis zip --arm64 --publish never",
     "dist:linux": "pnpm run dist:linux:x64",
     "dist:linux:x64": "pnpm build && node scripts/stage-ffmpeg.mjs linux x64 && electron-builder --linux AppImage deb tar.gz --x64 --publish never",
     "dist:linux:arm64": "pnpm build && node scripts/stage-ffmpeg.mjs linux arm64 && electron-builder --linux AppImage deb tar.gz --arm64 --publish never",

@@ -35,10 +35,17 @@ receives no secrets, creates no official installer and publishes no release.
 GitHub Actions dependencies are pinned to immutable commit SHAs, and pnpm is
 installed at the exact version declared by the repository.
 
-The future release pipeline will add native macOS ARM64 and x64, Windows x64,
-Linux x64 and Linux ARM64 jobs. Windows ARM64 remains experimental until it is
-validated on physical hardware. Every package must be launched briefly on its
-target system and accompanied by SHA-256 checksums and a build manifest.
+The manually dispatched beta release workflow builds native macOS ARM64 and
+x64, Windows x64, Linux x64 and Linux ARM64 jobs. Windows ARM64 remains
+experimental and is not published until it has been validated on physical
+hardware. Every package is inspected on its target system and accompanied by
+SHA-256 checksums, an SPDX SBOM, build metadata and GitHub build provenance.
+
+The workflow creates a draft prerelease only after every platform build and
+attestation succeeds. Publishing that draft remains a separate maintainer
+action. These beta packages deliberately disclose their trust status: macOS
+uses ad-hoc signing, Windows remains unsigned, and no release is presented as a
+signed stable build.
 
 Linux keeps three distribution formats: DEB, portable `tar.gz` and AppImage.
 AppImage requires `libfuse.so.2` on some distributions, so DEB and the
@@ -138,9 +145,9 @@ user and is never redistributed by StreamShare.
 Detailed compliance rules are documented in
 [`FFMPEG_DISTRIBUTION.md`](FFMPEG_DISTRIBUTION.md).
 
-## Enabling official releases
+## Enabling signed stable releases
 
-A public release will be created only after:
+A signed stable release will be created only after:
 
 1. code validation and the platform matrix both succeed;
 2. secrets and signed build commands are enabled;

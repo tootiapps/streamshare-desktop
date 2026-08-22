@@ -111,10 +111,11 @@ distributions without requiring FUSE. AppImage remains available for systems
 that provide `libfuse.so.2`; on recent Ubuntu installations without FUSE 2,
 use the DEB or portable archive instead.
 
-Release builds must be produced on their target system: macOS for Apple
-signing and notarization, Windows for Authenticode signing, and Linux for
-AppImage, DEB and `tar.gz` packages. The future release process will attach
-artifacts, SHA-256 checksums and licence notices to the same signed release.
+Release builds are produced on their target system. The beta release workflow
+attaches artifacts, SHA-256 checksums, SPDX SBOMs, build metadata and licence
+notices to a manually reviewed GitHub prerelease. macOS beta bundles use ad-hoc
+signing, while Windows beta packages remain unsigned until the project obtains
+a trusted signing service.
 
 The `dist:*` scripts select architectures explicitly. Continuous validation
 builds and tests the client without creating a release. The platform matrix
@@ -133,6 +134,10 @@ Please report vulnerabilities through
 [GitHub private vulnerability reporting](https://github.com/tootiapps/streamshare-desktop/security/advisories/new).
 Do not include credentials, pairing tokens, media URLs or sensitive
 diagnostics in a public issue.
+
+See the repository's [`PRIVACY.md`](PRIVACY.md) and
+[`CODE_SIGNING_POLICY.md`](CODE_SIGNING_POLICY.md) for the public privacy and
+release-trust commitments.
 
 ## Independence and licensing
 
