@@ -1,63 +1,57 @@
-# Streamshare TV Client
+# StreamShare TV Client
 
-Client de lecture distante open source pour Windows, macOS et Linux. Il reçoit
-les commandes du protocole Streamshare Remote v1 sur le réseau local et lit les
-flux avec le moteur multimédia d’Electron et hls.js. Les codecs audio non pris
-en charge par Chromium (notamment AC-3, E-AC-3, DTS et TrueHD) basculent vers
-un sidecar FFmpeg qui convertit l’audio en AAC et, uniquement si le codec vidéo
-n’est pas décodable, réencode la vidéo en H.264. La vidéo compatible reste
-copiée sans réencodage ; un tampon audio initial et une
-reprise unique évitent le double démarrage et les ruptures aux limites de
-segments. Dans ce mode, les sous-titres texte compatibles sont diffusés
-indépendamment en WebVTT avec leur timeline d’origine ; les
-sous-titres image restent visibles mais sont signalés indisponibles.
+Open-source remote playback client for Windows, macOS and Linux. It receives
+StreamShare Remote v1 commands over the local network and plays compatible
+media streams. Unsupported audio codecs, including AC-3, E-AC-3, DTS and
+TrueHD, use an FFmpeg compatibility process that converts audio to AAC. Video
+is copied without re-encoding whenever possible and converted to H.264 only
+when the original codec cannot be decoded. An initial audio buffer and a
+single coordinated resume prevent duplicate starts and interruptions at
+segment boundaries. Compatible text subtitles remain available as WebVTT on
+their original timeline; image-based subtitles are listed but reported as
+unavailable in this mode.
 
-Le panneau de configuration permet d’activer ou désactiver ce mode et affiche
-la version ainsi que l’emplacement des exécutables détectés. Les flux HLS qui
-annoncent un codec compatible ne sont pas analysés par FFmpeg. Lors d’un
-changement de piste ou d’un seek, le nouveau flux audio est préparé avant la
-bascule afin de préserver l’image et la position de lecture. Le lecteur se met
-en pause au point courant et affiche un indicateur de chargement jusqu’à ce que
-la vidéo, une réserve audio validée et les sous-titres sélectionnés soient
-prêts sur la même timeline. Il reprend ensuite les deux éléments une seule fois,
-sans correction permanente de vitesse. Les incidents HLS ultérieurs utilisent
-les reprises réseau ou média de hls.js sans redémarrer automatiquement le
-pipeline FFmpeg ni afficher une nouvelle boucle de chargement.
+The settings panel can enable or disable compatibility playback and displays
+the application version and detected executable paths. Compatible HLS streams
+are played directly without FFmpeg inspection. After seeking or switching
+tracks, the replacement audio stream is prepared before the transition so the
+video and playback position remain stable. Playback pauses at the current
+position and shows a loading indicator until video, a validated audio reserve
+and the selected subtitles are ready on the same timeline. It then resumes
+once, without permanent playback-speed correction. Later HLS incidents use
+ordinary network or media recovery without automatically restarting the
+FFmpeg pipeline or entering another loading loop.
 
-Pour Dolby Vision profil 5, le client sonde le codec exact `dvh1.05.xx` avec
-MSE, l’élément vidéo et Media Capabilities. Le mode **Automatique** conserve la
-lecture native uniquement lorsque cette capacité est explicitement annoncée ;
-sinon il demande une conversion SDR. Le mode **Natif** force la conservation du
-flux Dolby Vision et le mode **SDR** force la conversion. Cette conversion
-nécessite le filtre `libplacebo`, son option `apply_dolbyvision` et un backend
-GPU fonctionnel. Le client vérifie ces trois conditions au démarrage. Si elles
-ne sont pas réunies, il refuse de produire une conversion aux couleurs fausses
-et indique qu’une version externe de FFmpeg avec libplacebo doit être choisie.
-Les paquets Windows incluent libplacebo et son runtime Vulkan. Les paquets
-macOS incluent libplacebo, le chargeur Vulkan et MoltenVK afin d’exécuter ce
-traitement sur Metal. La disponibilité effective reste vérifiée au démarrage,
-car le pilote et le GPU doivent fournir un backend utilisable. Le paquet Linux
-conserve pour l’instant le moteur natif et le choix d’un FFmpeg externe comme
-solutions.
-Les profils Dolby Vision copiés sont remuxés sous le tag `dvh1` avec leur profil
-et leur niveau, au lieu d’être annoncés comme du HEVC générique `hvc1`.
+For Dolby Vision Profile 5, the client checks support for the exact
+`dvh1.05.xx` codec. **Automatic** mode preserves native playback only when
+that capability is explicitly reported; otherwise it requests SDR conversion.
+**Native** mode always preserves the Dolby Vision stream, while **SDR** mode
+always requests conversion. Conversion requires the `libplacebo` filter, its
+`apply_dolbyvision` option and a working GPU backend. The client verifies all
+three at startup. If any requirement is missing, it refuses to generate
+incorrect colours and asks the user to select an external FFmpeg build with
+libplacebo. Windows packages include libplacebo and its Vulkan runtime. macOS
+packages include libplacebo, the Vulkan loader and MoltenVK for execution on
+Metal. Availability is still verified at runtime because the driver and GPU
+must provide a usable backend. Linux currently relies on native playback or a
+user-selected external FFmpeg build. Copied Dolby Vision profiles are remuxed
+with their exact profile and level under the `dvh1` tag instead of being
+announced as generic `hvc1` HEVC.
 
-Lorsqu’une conversion vidéo est réellement nécessaire, elle conserve par
-défaut la résolution originale sans agrandissement. Le réglage **Qualité de
-conversion vidéo** permet de la plafonner à 2160p, 1080p ou 720p pour les
-machines moins puissantes. Le débit H.264 et son niveau sont adaptés au palier
-obtenu : 24 Mbit/s au-dessus du 1080p, 8 Mbit/s au-dessus du 720p et 4 Mbit/s
-jusqu’au 720p. Le même choix est réappliqué après un déplacement ou un changement
-de piste et apparaît dans le panneau d’informations techniques.
+When video conversion is required, the original resolution is preserved by
+default and never upscaled. The **Video conversion quality** setting can cap
+the output at 2160p, 1080p or 720p for less powerful devices. The H.264 bitrate
+and level follow the resulting tier: 24 Mbit/s above 1080p, 8 Mbit/s above
+720p, and 4 Mbit/s up to 720p. The same setting is reapplied after seeking or
+switching tracks and is shown in the technical information panel.
 
-Les segments produits par FFmpeg sont temporaires. La source est lue au rythme
-de la lecture, la playlist HLS ne conserve qu’une fenêtre glissante de six
-segments et les anciens segments sont supprimés automatiquement. Le répertoire
-temporaire est nettoyé au démarrage, à l’arrêt de la lecture et avant la sortie
-de l’application. Le premier démarrage après mise à jour supprime également
-l’ancien cache situé dans `sessionData/media-fallback`.
+FFmpeg output segments are temporary. The source is read at playback speed,
+the HLS playlist retains a sliding window of six segments, and older segments
+are removed automatically. Temporary data is cleared at startup, when
+playback stops and before the application exits. The first launch after an
+upgrade also removes the former `sessionData/media-fallback` cache.
 
-## Développement
+## Development
 
 ```bash
 pnpm install
@@ -65,47 +59,44 @@ pnpm ffmpeg:build:host
 pnpm start
 ```
 
-La première commande FFmpeg prépare et vérifie le bundle natif de la machine.
-Elle requiert `libplacebo` et `molten-vk` via Homebrew sur macOS. `start`
-reconstruit ensuite l’application, recopie ce bundle dans `dist/ffmpeg` et
-l’utilise réellement. Si le cache n’existe pas encore, `start` tente de le
-construire automatiquement. Une version système différente n’est donc plus
-sélectionnée silencieusement en développement.
+The FFmpeg command prepares and validates a native bundle for the current
+machine. On macOS it requires `libplacebo` and `molten-vk` from Homebrew.
+`start` then rebuilds the application, copies that bundle to `dist/ffmpeg`
+and uses it for playback. If the cache does not exist yet, `start` attempts
+to build it automatically. Development therefore never switches silently to
+a different system FFmpeg version.
 
-Le client reste actif dans la zone de notification lorsque sa fenêtre est
-fermée. Il ne contient ni Wake-on-LAN, ni mécanisme destiné à réveiller ou
-relancer un appareil Android arrêté.
+The client remains active in the notification area after its window is
+closed. It does not provide Wake-on-LAN and cannot wake or restart a powered-off
+Android device.
 
-Le panneau **Informations techniques** s’ouvre depuis le menu
-**Présentation** ou avec `Cmd+I` sur macOS et `Ctrl+I` sur Windows/Linux. Il
-affiche en direct la décision de lecture native ou FFmpeg, les codecs et pistes,
-le profil Dolby Vision, le tone mapping, l’encodeur, le processus FFmpeg, les
-buffers, la résolution rendue, les images perdues et les dernières sorties du
-processus. L’adresse affichée masque les segments intermédiaires afin de ne pas
-exposer accidentellement un jeton de téléchargement lors d’une capture.
+The **Technical information** panel opens from the **View** menu or with
+`Cmd+I` on macOS and `Ctrl+I` on Windows/Linux. It displays the active
+native or FFmpeg playback decision, codecs and tracks, Dolby Vision profile,
+tone mapping, encoder, FFmpeg process, buffers, rendered resolution, dropped
+frames and recent process output. Displayed addresses mask intermediate path
+segments so a screenshot cannot accidentally expose a media access token.
 
-L’interface détecte par défaut la langue du système et permet de choisir
-explicitement l’allemand, l’anglais, l’espagnol, le français, l’italien, le
-portugais ou le russe. Pendant une lecture, le survol de la vidéo affiche les
-commandes locales de lecture, pause, arrêt, plein écran et déplacement dans le
-média. Le panneau de pistes permet de choisir l’audio, la qualité vidéo et les
-sous-titres exposés par hls.js. Il est entièrement navigable par la télécommande
-Streamshare.
+The interface follows the system language by default and supports explicit
+selection of German, English, Spanish, French, Italian, Portuguese or Russian.
+During playback, moving the pointer over the video reveals local play, pause,
+stop, fullscreen and seek controls. The tracks panel selects audio, video
+quality and available subtitles. It is also fully navigable from the
+StreamShare remote control.
 
-Le logo affiché est copié depuis `assets/logo.svg` à chaque build.
-Les assets natifs conservés sont uniquement ceux consommés par le packaging :
-le PNG 1024 px exporté depuis Icon Composer sous macOS, l’ICO multirésolution
-sous Windows et le jeu de PNG aux tailles Freedesktop sous Linux. Ils sont
-préparés dans `dist/icons` et Electron Builder génère les ressources finales du
-bundle. Le masque, les marges et le relief du PNG macOS ne sont pas retraités
-par le build. L’application packagée laisse macOS lire l’icône du bundle ; le
-remplacement dynamique du Dock est réservé au mode de développement. Le projet
-éditable `assets/streamshare.icon` reste la source Icon Composer et n’est pas
-copié dans l’application distribuée.
+The displayed logo is copied from `assets/logo.svg` during each build. Native
+assets are limited to those required by the packaging process: the 1024 px PNG
+exported from Icon Composer on macOS, the multi-resolution ICO on Windows and
+the Freedesktop PNG sizes on Linux. They are prepared under `dist/icons`
+before final package resources are generated. The macOS PNG mask, margins and
+depth are preserved. Packaged builds let macOS load the bundle icon; dynamic
+Dock icon replacement is limited to development mode. The editable
+`assets/streamshare.icon` project remains the Icon Composer source and is
+not copied into distributed packages.
 
-## Paquets installables
+## Installable packages
 
-Electron Builder produit les formats de distribution propres à chaque système :
+Build commands produce the native distribution formats for each system:
 
 ```bash
 pnpm dist:mac
@@ -113,40 +104,45 @@ pnpm dist:win
 pnpm dist:linux
 ```
 
-Ces commandes créent respectivement un DMG macOS, un installateur NSIS Windows,
-puis une AppImage, un paquet DEB et une archive portable `tar.gz` Linux. Le DEB
-est recommandé sous Ubuntu et Debian. L'archive `tar.gz` permet un lancement
-portable sur les autres distributions sans dépendre de FUSE. L'AppImage reste
-fournie pour les systèmes qui disposent de `libfuse.so.2` ; sur une installation
-Ubuntu récente qui ne fournit pas FUSE 2 par défaut, utiliser le DEB ou l'archive
-portable.
+These commands create a macOS DMG, a Windows NSIS installer, and Linux
+AppImage, DEB and portable `tar.gz` packages. DEB is recommended for Ubuntu
+and Debian. The `tar.gz` archive provides a portable option on other
+distributions without requiring FUSE. AppImage remains available for systems
+that provide `libfuse.so.2`; on recent Ubuntu installations without FUSE 2,
+use the DEB or portable archive instead.
 
-Les versions de publication doivent être construites sur le système cible :
-macOS pour la signature et la notarisation Apple, Windows pour la signature Authenticode, et
-Linux pour les paquets AppImage/DEB/tar.gz. La chaîne de publication attachera
-les artefacts, sommes SHA-256 et notices de licence à une même release signée.
+Release builds must be produced on their target system: macOS for Apple
+signing and notarization, Windows for Authenticode signing, and Linux for
+AppImage, DEB and `tar.gz` packages. The future release process will attach
+artifacts, SHA-256 checksums and licence notices to the same signed release.
 
-Les architectures sont explicites dans les scripts `dist:*`. La validation
-continue compile et teste le client sans créer de release. La matrice de
-plateformes et l'activation des signatures sont décrites dans
+The `dist:*` scripts select architectures explicitly. Continuous validation
+builds and tests the client without creating a release. The platform matrix
+and signing requirements are documented in
 [`BUILD_AND_SIGNING.md`](BUILD_AND_SIGNING.md).
 
-## Sécurité
+## Security
 
-- identité TLS auto-signée persistante et épinglée lors de la découverte ;
-- code SAS à deux chiffres affiché localement et jamais transmis au récepteur ;
-- jeton aléatoire chiffré avec RSA-OAEP/SHA-256 ;
-- seul le condensat SHA-256 du jeton est conservé côté récepteur ;
-- accès révocable depuis le panneau de configuration.
+- a persistent self-signed TLS identity, pinned during discovery;
+- a two-digit SAS code displayed locally and never sent to the controller;
+- a random token encrypted with RSA-OAEP/SHA-256;
+- only the token's SHA-256 digest stored by the receiver;
+- access that can be revoked from the settings panel.
 
-## Indépendance et licences
+Please report vulnerabilities through
+[GitHub private vulnerability reporting](https://github.com/tootiapps/streamshare-desktop/security/advisories/new).
+Do not include credentials, pairing tokens, media URLs or sensitive
+diagnostics in a public issue.
 
-Ce paquet est publié sous licence Apache-2.0 et n’importe aucun code propriétaire
-de l’application Streamshare. Il implémente uniquement le
-[protocole distant public](https://docs.tootiapps.com/clients/). Cette séparation
-permet de publier le client comme projet open source indépendant, sous réserve
-de disposer des droits nécessaires sur le nom et les assets de marque. FFmpeg
-est exécuté comme programme séparé et ne doit être ajouté aux
-paquets publiés qu’après validation de sa configuration de build et de ses
-sources correspondantes. Les binaires marqués `--enable-nonfree` sont refusés.
-Voir `FFMPEG_DISTRIBUTION.md` et `THIRD_PARTY_NOTICES.md`.
+## Independence and licensing
+
+This project is licensed under Apache-2.0 and contains no proprietary code
+from the StreamShare applications. It implements only the
+[public remote protocol](https://docs.tootiapps.com/clients/), allowing the
+desktop receiver to remain an independent open-source project.
+
+FFmpeg runs as a separate program and may be included in public packages only
+after its build configuration and matching sources have been validated.
+Builds marked `--enable-nonfree` are rejected. See
+[`FFMPEG_DISTRIBUTION.md`](FFMPEG_DISTRIBUTION.md) and
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

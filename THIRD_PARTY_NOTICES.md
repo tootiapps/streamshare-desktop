@@ -1,6 +1,6 @@
 # Third-party notices
 
-Runtime dependencies used directly by Streamshare TV Client:
+Runtime dependencies used directly by StreamShare TV Client:
 
 | Component | Resolved version | License selected for distribution |
 | --- | ---: | --- |
@@ -14,20 +14,19 @@ Runtime dependencies used directly by Streamshare TV Client:
 videojs-contrib-hls, Copyright (c) 2013-2015 Brightcove. Those components are
 distributed under the Apache License 2.0 included with their package.
 
-Le mode de compatibilité exécute `ffmpeg` et `ffprobe` comme programmes
-séparés. Les packages officiels embarquent un build FFmpeg 7.1.1 sous LGPL,
-compilé sans `--enable-gpl` et sans `--enable-nonfree`. Les textes LGPL, la
-configuration de compilation et l’URL de l’archive source exacte sont inclus
-avec les exécutables dans le package. L’archive source correspondante devra
-être publiée avec les packages destinés au public. Voir
-`FFMPEG_DISTRIBUTION.md`.
+Compatibility playback runs `ffmpeg` and `ffprobe` as separate programs.
+Official packages include an LGPL FFmpeg 7.1.1 build compiled without
+`--enable-gpl` or `--enable-nonfree`. The LGPL texts, build configuration and
+exact source archive URL are included with the executables. The matching
+source archive must be published alongside packages intended for public
+distribution. See `FFMPEG_DISTRIBUTION.md`.
 
-Le bundle Windows ajoute libplacebo sous LGPL-2.1-or-later et ses dépendances
-Vulkan/shader sous forme de DLL séparées. Le paquet contient l’inventaire exact
-`RUNTIME_COMPONENTS.txt` ainsi qu’une copie des licences de chaque paquet dans
-`THIRD_PARTY_LICENSES`. Les en-têtes Vulkan sont inventoriés séparément dans
-`BUILD_COMPONENTS.txt`. Aucun de ces composants n’active les options FFmpeg
-`--enable-gpl` ou `--enable-nonfree`.
+The Windows bundle adds libplacebo under LGPL-2.1-or-later and its Vulkan and
+shader dependencies as separate DLLs. The package contains the exact
+`RUNTIME_COMPONENTS.txt` inventory and a copy of every package licence under
+`THIRD_PARTY_LICENSES`. Vulkan headers are recorded separately in
+`BUILD_COMPONENTS.txt`. None of these components enables FFmpeg's
+`--enable-gpl` or `--enable-nonfree` options.
 
 Versions are locked by the workspace lockfile. Release automation must produce
 and review a complete transitive dependency notice before publishing binaries.
