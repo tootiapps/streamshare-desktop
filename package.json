@@ -60,7 +60,7 @@
     "electron": "^42.0.0",
     "electron-builder": "^26.0.20",
     "esbuild": "^0.28.0",
-    "typescript": "~5.9.3"
+    "typescript": "~7.0.2"
   },
   "build": {
     "appId": "io.streamshare.tv",
