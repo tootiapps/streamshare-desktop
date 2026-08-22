@@ -1,157 +1,156 @@
-# Builds desktop et signatures
+# Desktop builds and signing
 
-Ce document décrit la construction et la future publication des installateurs
-StreamShare Desktop. Les commandes locales ne publient rien : la création d’une
-GitHub Release reste une action de maintenance distincte et explicitement
-contrôlée.
+This document describes how StreamShare Desktop installers are built and how
+official releases will eventually be published. Local commands never publish
+anything: creating a GitHub Release remains a separate, explicitly controlled
+maintenance action.
 
-## Cibles prises en charge
+## Supported targets
 
-Les commandes nomment toujours l'architecture afin de ne pas hériter
-accidentellement de celle de la machine de build.
+Every command names its target architecture so it cannot accidentally inherit
+the build machine's architecture.
 
-| Système | Architecture | Commande |
+| System | Architecture | Command |
 | --- | --- | --- |
 | macOS | ARM64 | `pnpm run dist:mac:arm64` |
 | macOS | x64 | `pnpm run dist:mac:x64` |
 | Windows | x64 | `pnpm run dist:win:x64` |
-| Windows | ARM64, expérimental | `pnpm run dist:win:arm64` |
+| Windows | ARM64, experimental | `pnpm run dist:win:arm64` |
 | Linux | x64 | `pnpm run dist:linux:x64` |
 | Linux | ARM64 | `pnpm run dist:linux:arm64` |
 
-Les alias `dist:mac`, `dist:win` et `dist:linux` ciblent respectivement macOS
-ARM64, Windows x64 et Linux x64. `dist:host` reste disponible pour un paquet de
-développement correspondant à la machine courante. Toutes ces commandes
-passent `--publish never` à Electron Builder.
+The `dist:mac`, `dist:win` and `dist:linux` aliases target macOS ARM64,
+Windows x64 and Linux x64 respectively. `dist:host` remains available for a
+development package matching the current machine. All these commands pass
+`--publish never` to the packaging tool.
 
-Les noms des fichiers contiennent la version, le système et l'architecture.
-Les source maps générées par notre build restent disponibles dans `dist` pour
-le diagnostic local, mais elles sont exclues des installateurs.
+Artifact names contain the version, operating system and architecture. Source
+maps produced by the build remain available under `dist` for local
+diagnostics but are excluded from installers.
 
-## Validation continue
+## Continuous validation
 
-Le workflow public compile et teste le client avec des permissions en lecture
-seule. Il ne reçoit aucun secret, ne construit aucun installateur officiel et ne
-crée aucune release. Les Actions utilisées sont épinglées à des SHA de commit
-immuables et pnpm est installé à la version exacte déclarée par le dépôt.
+The public workflow builds and tests the client with read-only permissions. It
+receives no secrets, creates no official installer and publishes no release.
+GitHub Actions dependencies are pinned to immutable commit SHAs, and pnpm is
+installed at the exact version declared by the repository.
 
-La chaîne de release ajoutera ensuite une matrice native macOS ARM64 et x64,
-Windows x64, Linux x64 et Linux ARM64. Windows ARM64 restera expérimental jusqu’à
-validation sur du matériel réel. Chaque paquet devra être lancé brièvement sur
-son système cible, puis accompagné de ses sommes SHA-256 et de son manifeste de
-build.
+The future release pipeline will add native macOS ARM64 and x64, Windows x64,
+Linux x64 and Linux ARM64 jobs. Windows ARM64 remains experimental until it is
+validated on physical hardware. Every package must be launched briefly on its
+target system and accompanied by SHA-256 checksums and a build manifest.
 
-Les paquets Linux conservent trois formats : DEB, archive portable `tar.gz` et
-AppImage. L’AppImage exige `libfuse.so.2` sur certaines distributions ; le DEB
-ou l’archive portable restent donc les choix documentés sans prérequis FUSE.
+Linux keeps three distribution formats: DEB, portable `tar.gz` and AppImage.
+AppImage requires `libfuse.so.2` on some distributions, so DEB and the
+portable archive remain the documented options without a FUSE prerequisite.
 
-## Contenu d'un paquet Electron
+## Package contents
 
-La liste Electron Builder `files` limite le paquet à `dist` et au
-`package.json` du client. Aucun fichier de développement, certificat ou secret
-ne doit être ajouté à cette liste.
+The package `files` allowlist limits output to `dist` and the client
+`package.json`. Development files, certificates and secrets must never be
+added to this list.
 
-Un bundle JavaScript Electron reste inspectable par son utilisateur. Le dépôt
-public contient donc le même code client que les installateurs officiels, ainsi
-que les licences et assets nécessaires à leur reconstruction.
+The distributed application code can be inspected by its users. This public
+repository therefore contains the same client code as official installers,
+along with the licences and assets required to rebuild it.
 
-## Préparation macOS signée
+## Signed macOS preparation
 
-Les builds macOS de développement utilisent une signature ad hoc, sans
-certificat ni secret. Elle scelle le bundle et ses helpers, mais n'identifie pas
-l'éditeur auprès d'Apple et ne remplace pas la notarisation.
+Development macOS builds use ad-hoc signing without a certificate or secret.
+This seals the application bundle and its helpers but does not identify the
+publisher to Apple and does not replace notarization.
 
-Après avoir vérifié le SHA-256 et copié l'application dans `/Applications`,
-essayer de l'ouvrir une première fois. macOS doit alors permettre de choisir
-`Ouvrir quand même` dans **Réglages Système > Confidentialité et sécurité**.
-Le bouton reste disponible pendant une durée limitée après la tentative.
+After verifying the SHA-256 checksum and copying the application to
+`/Applications`, try to open it once. macOS should then offer **Open Anyway**
+under **System Settings > Privacy & Security**. The button remains available
+for a limited time after the launch attempt.
 
-Si cette option n'est pas proposée sur la version de macOS utilisée, le testeur
-peut lever uniquement la quarantaine de l’artefact local contrôlé :
+If that option is unavailable on the tested macOS version, a tester may remove
+quarantine only from the locally verified artifact:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Streamshare TV Client.app"
 ```
 
-Il ne faut pas désactiver Gatekeeper globalement. L'alerte disparaîtra seulement
-lorsque les builds Developer ID notariés seront activés.
+Do not disable Gatekeeper globally. This warning will disappear only after
+notarized Developer ID builds are enabled.
 
-Les commandes signées sont déjà déclarées :
+Signed commands are already declared:
 
 ```bash
 pnpm run dist:signed:mac:arm64
 pnpm run dist:signed:mac:x64
 ```
 
-Elles imposent `forceCodeSigning=true` et `mac.notarize=true`. Elles refusent de
-démarrer si le certificat ou les identifiants de notarisation sont absents.
+They enforce `forceCodeSigning=true` and `mac.notarize=true`, and refuse to
+start if the certificate or notarization credentials are missing.
 
-Variables requises pour le certificat :
+Certificate variables:
 
-- `CSC_LINK` : chemin, URL privée ou contenu base64 du certificat Developer ID
-  Application au format P12 ;
-- `CSC_KEY_PASSWORD` : mot de passe du P12.
+- `CSC_LINK`: path, private URL or base64 content of the Developer ID
+  Application certificate in P12 format;
+- `CSC_KEY_PASSWORD`: P12 password.
 
-La notarisation accepte l'une de ces deux familles :
+Notarization accepts either credential family:
 
-- clé API App Store Connect : `APPLE_API_KEY`, `APPLE_API_KEY_ID` et
-  `APPLE_API_ISSUER` ;
-- compte Apple : `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` et `APPLE_TEAM_ID`.
+- App Store Connect API key: `APPLE_API_KEY`, `APPLE_API_KEY_ID` and
+  `APPLE_API_ISSUER`;
+- Apple account: `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and
+  `APPLE_TEAM_ID`.
 
-La clé API est préférable en CI. Les valeurs doivent être stockées dans les
-secrets ou l'environnement protégé du dépôt, jamais dans un fichier suivi, un
-artefact ou un log.
+An API key is preferred in CI. Values must be stored in repository secrets or
+a protected environment, never in a tracked file, artifact or log.
 
-## Préparation Windows signée
+## Signed Windows preparation
 
-La commande préparée pour un certificat Authenticode exportable est :
+The prepared command for an exportable Authenticode certificate is:
 
 ```bash
 pnpm run dist:signed:win:x64
 ```
 
-Elle exige `WIN_CSC_LINK` et `WIN_CSC_KEY_PASSWORD`, puis active
-`forceCodeSigning=true`. Azure Artifact Signing pourra remplacer ce mécanisme,
-mais sa configuration devra être ajoutée et testée lorsque le compte et le
-profil de certificat existeront.
+It requires `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD`, then enables
+`forceCodeSigning=true`. Azure Artifact Signing may eventually replace this
+mechanism, but its configuration must be added and tested after an account and
+certificate profile exist.
 
-Il n'existe volontairement aucun workflow de release signé tant que les
-certificats n'existent pas. Cela évite de transformer un tag en publication non
-signée par erreur.
+There is deliberately no signed release workflow until signing credentials
+exist. This prevents a tag from accidentally producing an unsigned public
+release.
 
 ## FFmpeg
 
-Les builds officiels compilent et embarquent FFmpeg 7.1.1 et FFprobe à partir de
-la source officielle épinglée. Chaque couple système/architecture reçoit des
-exécutables contrôlés. La chaîne :
+Official builds compile and bundle FFmpeg 7.1.1 and FFprobe from pinned
+official source. Each operating system and architecture pair receives
+validated executables. The process:
 
-1. vérifie leur version et leur architecture ;
-2. refuse `--enable-gpl` et `--enable-nonfree` pour les binaires embarqués ;
-3. vérifie l’empreinte SHA-256 figée de l’archive source ;
-4. conserve la configuration de compilation, les licences et les sources
-   correspondantes ;
-5. exécute `ffmpeg -version` et `ffprobe -version` depuis l'application
-   packagée sur le système cible.
+1. verifies their version and architecture;
+2. rejects `--enable-gpl` and `--enable-nonfree` in bundled binaries;
+3. verifies the pinned SHA-256 digest of the source archive;
+4. retains the build configuration, licences and corresponding sources;
+5. runs `ffmpeg -version` and `ffprobe -version` from the packaged
+   application on the target system.
 
-Le choix d’un exécutable externe dans les réglages n’est pas soumis au refus
-de `--enable-nonfree`, car ce fichier est fourni et utilisé localement par
-l’utilisateur et n’est jamais redistribué par Streamshare.
+A user-selected external executable is not rejected when it contains
+`--enable-nonfree`, because that file is supplied and used locally by the
+user and is never redistributed by StreamShare.
 
-Les règles juridiques détaillées restent dans `FFMPEG_DISTRIBUTION.md`.
+Detailed compliance rules are documented in
+[`FFMPEG_DISTRIBUTION.md`](FFMPEG_DISTRIBUTION.md).
 
-## Activation des releases officielles
+## Enabling official releases
 
-Une release publique ne sera créée qu’après :
+A public release will be created only after:
 
-1. réussite de la validation du code et de la matrice de plateformes ;
-2. activation des secrets et des commandes signées ;
-3. smoke-tests des paquets sur les OS cibles ;
-4. vérification des sommes, licences et sources FFmpeg correspondantes ;
-5. approbation explicite de la release par un mainteneur.
+1. code validation and the platform matrix both succeed;
+2. secrets and signed build commands are enabled;
+3. packages pass smoke tests on their target operating systems;
+4. checksums, licences and matching FFmpeg sources are verified;
+5. a maintainer explicitly approves the release.
 
-Références :
+References:
 
-- [Electron Builder — builds multi-plateformes](https://www.electron.build/docs/features/multi-platform-build/)
-- [Electron Builder — signature](https://www.electron.build/docs/features/code-signing/)
-- [Electron Builder — notarisation macOS](https://www.electron.build/docs/notarization/)
-- [GitHub — runners hébergés](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+- [Electron Builder — multi-platform builds](https://www.electron.build/docs/features/multi-platform-build/)
+- [Electron Builder — code signing](https://www.electron.build/docs/features/code-signing/)
+- [Electron Builder — macOS notarization](https://www.electron.build/docs/notarization/)
+- [GitHub-hosted runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
